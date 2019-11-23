@@ -2,7 +2,10 @@ var cols = 9;
 var rows = 13;
 var grid = new Array(cols);
 var w, h;
+var start_tile;
 //var warehouses = new Array(12);
+var houses_left = ["h1", "h2", "h3", "h4", "h5"];
+
 var obstacle_coords = [
     [0, 0], [0, 1], [0, 12], [0, 11], [8, 0], [8, 1], [8, 12], [8, 11],
     [2, 1], [3, 1], [5, 1], [6, 1], [3, 2], [5, 2], [0, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3],
@@ -33,6 +36,9 @@ function Tile(i, j) {
     this.x = i;
     this.y = j;
     this.warehouse = false;
+    if(this.warehouse){
+        this.id = 0;
+    }
     this.obstacle = false;
     this.show = function(color){
         fill(color);
@@ -47,8 +53,14 @@ function Tile(i, j) {
     
 }
 
-function closestWarehouse(){
-                                                //funtion to return closest warehouse to current tile and also check if the warehouse is needed or not and return the closest warehouse coords
+function closestWarehouse(a, b){
+    var distances = new Array(w_coords.length); //funtion to return closest warehouse to current tile and also check if                                                    the warehouse is needed or not and return the closest warehouse coords
+    for(var i = 0; i<w_coords.length; i++){
+        distances[i] = dist(a, b, w_coords[i][0], w_coords[i][1]);
+    }   
+    distances = sort(distances);
+    console.log(distances);
+    return distances[0];
 }
 
 function findRequirements(){
@@ -74,15 +86,19 @@ function setup() {
           grid[i][j] = new Tile(i, j);
       }
   }
-
-  var start = grid[4][10];
+  start_tile = grid[4][10];
+  var length = closestWarehouse(start_tile.x, start_tile.y);
+  console.log(length);
 
 }
 
+
 function draw() {
-        
+  var current_tile = start_tile;
+    
   for(var k = 0; k<12; k++){          //update warehouses everytime in the beginning
-      grid[w_coords[k][0]][w_coords[k][1]].warehouse = true;   
+      grid[w_coords[k][0]][w_coords[k][1]].warehouse = true;
+      grid[w_coords[k][0]][w_coords[k][1]].id = k+1;
   }
     
   for(var k = 0; k<obstacle_coords.length; k++){
@@ -94,5 +110,10 @@ function draw() {
           grid[i][j].show(255);
       }
   }
+ 
+    /*while(houses_left.length != 0){
+        closestWarehouse(current_tile.x, current_tile.y); 
+    }*/
+ 
     
 }
