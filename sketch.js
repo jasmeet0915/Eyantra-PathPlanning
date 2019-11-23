@@ -54,13 +54,20 @@ function Tile(i, j) {
 }
 
 function closestWarehouse(a, b){
-    var distances = new Array(w_coords.length); //funtion to return closest warehouse to current tile and also check if                                                    the warehouse is needed or not and return the closest warehouse coords
+    var distances = [];
     for(var i = 0; i<w_coords.length; i++){
-        distances[i] = dist(a, b, w_coords[i][0], w_coords[i][1]);
-    }   
-    distances = sort(distances);
+        //distances[0][i] = i+1;
+        //distances[1][i] = dist(a, b, w_coords[i][0], w_coords[i][1]);
+        distances.push({
+            distance: dist(a, b, w_coords[i][0], w_coords[i][1]),
+            id: i+1
+        });
+    } 
+    distances.sort(function(x, y){
+        return x.distance-y.distance
+    })
     console.log(distances);
-    return distances[0];
+    return [distances[0], distances[1]];
 }
 
 function findRequirements(){
@@ -88,7 +95,8 @@ function setup() {
   }
   start_tile = grid[4][10];
   var length = closestWarehouse(start_tile.x, start_tile.y);
-  console.log(length);
+  console.log(length[0]);
+    console.log(length[1]);
 
 }
 
