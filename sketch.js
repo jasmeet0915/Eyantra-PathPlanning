@@ -36,6 +36,10 @@ var w_coords = [  // location of warehouses
     [8, 2]
 ];
 
+var house_coords = [   //location of houses
+    [0, 8], [8, 8], [0, 4], [8, 4], [4, 2]
+];
+
 function Tile(i, j) {
     this.f = 0;
     this.g = 0;
@@ -98,8 +102,22 @@ function findRequirements(id1, id2){
     return destinations;//take warehouse coords and return the coords of house that require materials from that warehouse
 }
 
-function findPath(){
-                                                //funtion to apply A* and find path to from the given start to end and return the time for the path
+function findPath(h_loc, w_loc, current){
+    var openSet = [];
+    var closedSet = [];
+    openSet.push(current);
+    
+    var lowestf = 0;
+    while(openSet.length != 0){
+        for(var i = 0; i<openSet.length; i++){
+            if(openSet[i].f < openSet[lowestf].f){
+                lowestf = i;
+            }    
+        }
+        if(openSet[lowestf].x == w_loc[0] && openSet[lowestf].y == w_loc[1]){
+            console.log("Found Path!!");
+        }
+    }                                    //funtion to apply A* and find path to from the given start to end and return the time for the path
 }
 
 function setup() {
