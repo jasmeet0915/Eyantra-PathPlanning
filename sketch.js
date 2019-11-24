@@ -5,6 +5,13 @@ var w, h;
 var start_tile;
 //var warehouses = new Array(12);
 var houses_left = ["h1", "h2", "h3", "h4", "h5"];
+var configuration = [
+    [7, 8, 11, 12],
+    [3, 4, 5, 6],
+    [9, 10, 7, 8],
+    [1, 2, 0, 0],
+    [1, 2, 9, 10]
+]
 
 var obstacle_coords = [
     [0, 0], [0, 1], [0, 12], [0, 11], [8, 0], [8, 1], [8, 12], [8, 11],
@@ -70,8 +77,25 @@ function closestWarehouse(a, b){
     return [distances[0], distances[1]];
 }
 
-function findRequirements(){
-                                                //take warehouse coords and return the coords of house that require materials from that warehouse
+function findRequirements(id1, id2){
+    var destinations = [];
+    for(var i = 0; i<configuration.length; i++){
+        for(var j = 0; j<4; j++){
+            if(configuration[i][j] == id1){
+                destinations.push({
+                    house: i+1,
+                    warehouse: id1
+                });
+            }
+            if(configuration[i][j] == id2){
+                destinations.push({
+                    house: i+1,
+                    warehouse: id2
+                });
+            }
+        }
+    }     
+    return destinations;//take warehouse coords and return the coords of house that require materials from that warehouse
 }
 
 function findPath(){
@@ -94,10 +118,9 @@ function setup() {
       }
   }
   start_tile = grid[4][10];
-  var length = closestWarehouse(start_tile.x, start_tile.y);
-  console.log(length[0]);
-    console.log(length[1]);
-
+    var shiggy = closestWarehouse(start_tile.x, start_tile.y);
+    var array = findRequirements(shiggy[0]["id"], shiggy[1]["id"]);
+    console.log(array);
 }
 
 
@@ -120,7 +143,7 @@ function draw() {
   }
  
     /*while(houses_left.length != 0){
-        closestWarehouse(current_tile.x, current_tile.y); 
+        var warehouses = closestWarehouse(current_tile.x, current_tile.y); 
     }*/
  
     
