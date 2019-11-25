@@ -1,6 +1,7 @@
 var cols = 9;
 var rows = 13;
 var grid = new Array(cols);
+var rasta = [];
 var w, h;
 var start_tile;
 //var warehouses = new Array(12);
@@ -40,13 +41,28 @@ var house_coords = [   //location of houses
     [0, 8], [8, 8], [0, 4], [8, 4], [4, 2]
 ];
 
+function heuristic(tile1, housex, housey){
+    var distance = dist(tile1.x, housex, tile1.y, housey);
+    return distance;
+}
+
+function removeFromArray(elt, array){                   //funtion to remove element from a given array
+    for(var i = array.length-1; i>=0; i--){
+        if(array[i] == elt){
+            array.splice(i, 1);
+        }
+    }
+}
+
 function Tile(i, j) {
     this.f = 0;
     this.g = 0;
     this.h = 0;
     this.x = i;
     this.y = j;
+    this.neighbors = [];
     this.warehouse = false;
+    this.previous = undefined;
     if(this.warehouse){
         this.id = 0;
     }
@@ -61,7 +77,20 @@ function Tile(i, j) {
         }
         rect(this.x * w, this.y * h, w, h);
     }
-    
+    this.addNeighbors = function(grid){
+        if (this.x < cols - 1) {
+           this.neighbors.push(grid[this.x + 1][this.y]);
+        }
+        if (this.x > 0) {
+            this.neighbors.push(grid[this.x - 1][this.y]);
+        }
+        if (this.y < rows - 1) {
+            this.neighbors.push(grid[this.x][this.y + 1]);
+        }
+        if (this.y > 0) {
+            this.neighbors.push(grid[this.x][this.y - 1]);
+        }
+    }
 }
 
 function closestWarehouse(a, b){
@@ -102,10 +131,11 @@ function findRequirements(id1, id2){
     return destinations;//take warehouse coords and return the coords of house that require materials from that warehouse
 }
 
-function findPath(h_loc, w_loc, current){
-    var openSet = [];
+function findPath(h_number, w_number, current_house){
+    var openSet = []; 
     var closedSet = [];
-    openSet.push(current);
+    var path = [];
+    openSet.push(current_house);
     
     var lowestf = 0;
     while(openSet.length != 0){
@@ -114,10 +144,38 @@ function findPath(h_loc, w_loc, current){
                 lowestf = i;
             }    
         }
-        if(openSet[lowestf].x == w_loc[0] && openSet[lowestf].y == w_loc[1]){
+        var current = openSet[lowestf];
+        if(current.x == w_coords[w_number-1][0] && current.y == w_coords[w_number-1][1]){
+           var temp = current;
+            path.push(current);
+            while(temp.previous){
+                path.push(temp.previous);
+                temp = temp.previous;
+            }
             console.log("Found Path!!");
         }
-    }                                    //funtion to apply A* and find path to from the given start to end and return the time for the path
+        removeFromArray(current, openSet);
+        closedSet.push(current);
+        
+        var neighbors = current.neighbors;
+        for(var i = 0; i<neighbors.length; i++){
+            
+            if(!closedSet.includes(neighbors[i])){
+                var tempG = current.g + 1;
+                if(openSet.includes(neighbors[i])){
+                    if(tempG < neighbors[i].g){
+                        neighbors[i].g = tempG;
+                    }
+                }else{
+                    neighbors[i].g = tempG;
+                    openSet.push(neighbors[i]);
+                }
+                neighbors[i].h = heuristic(neighbors[i], w_coords[w_number-1][0], w_coords[w_number-1][1]);
+                neighbors[i].f = neighbors[i].g + neighbors[i].h;
+            }
+        }
+    }
+    return path;//funtion to apply A* and find path to from the given start to end and return the time for the path
 }
 
 function setup() {
@@ -135,10 +193,20 @@ function setup() {
           grid[i][j] = new Tile(i, j);
       }
   }
+  
+  for(var i = 0; i<cols; i++){  // creating tile neighbors
+      for(var j = 0; j<rows; j++){
+          grid[i][j].addNeighbors(grid);
+      }
+  }
+    
   start_tile = grid[4][10];
     var shiggy = closestWarehouse(start_tile.x, start_tile.y);
     var array = findRequirements(shiggy[0]["id"], shiggy[1]["id"]);
+    rasta = findPath(array[0]["house"], array[0]["warehouse"], start_tile);
     console.log(array);
+    console.log(rasta.length);
+    console.log(rasta);
 }
 
 
@@ -159,7 +227,9 @@ function draw() {
           grid[i][j].show(255);
       }
   }
- 
+    for (var i = 0; i<rasta.length; i++){
+        rasta[i].show(0, 255, 0);
+    }
     /*while(houses_left.length != 0){
         var warehouses = closestWarehouse(current_tile.x, current_tile.y); 
     }*/
