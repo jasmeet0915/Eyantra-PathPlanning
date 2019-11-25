@@ -26,7 +26,7 @@ var w_coords = [  // location of warehouses
     [0, 10],
     [2, 10],
     [0, 6],
-    [2, 6],
+    [2, 6],         //change to key value pair
     [0, 2],
     [2, 2],
     [6, 10],
@@ -38,7 +38,7 @@ var w_coords = [  // location of warehouses
 ];
 
 var house_coords = [   //location of houses
-    [0, 8], [8, 8], [0, 4], [8, 4], [4, 2]
+    [0, 8], [8, 8], [0, 4], [8, 4], [4, 2]          //change to key value pair
 ];
 
 function heuristic(tile1, housex, housey){
@@ -133,11 +133,14 @@ function findRequirements(id1, id2){
     return destinations;
 }
 
-//funtion to apply A* and find path to from the given start to end and return the time for the path
-function findPath(h_number, w_number, current_house){
+//funtion to apply A* and find optimal path to closest warehouse
+function findPath_warehouse(w_number, current_house){
     var openSet = [];                                   
     var closedSet = [];
     var path = [];
+    var f1 = 0;
+    
+    //path from current position to closest warehouse
     openSet.push(current_house);
     
     var lowestf = 0;
@@ -179,8 +182,67 @@ function findPath(h_number, w_number, current_house){
             }
         }
     }
-    return path;
+    for(var i = 0; i<path.length; i++){
+        f1 = path[i].f + f1;                //get total f of going from current position to closest warehouse
+    }
+    return [f1, path];
 }
+
+
+function findPath_house(h_number, current_warehouse){
+    var openSet = [];                                   
+    var closedSet = [];
+    var path = [];
+    var total_f = 0;
+    
+    //path from current position to closest warehouse
+    openSet.push(current_warehouse);
+    
+    var lowestf = 0;
+    while(openSet.length != 0){
+        for(var i = 0; i<openSet.length; i++){
+            if(openSet[i].f < openSet[lowestf].f){
+                lowestf = i;
+            }    
+        }
+        var current = openSet[lowestf];
+        if(current.x == house_coords[h_number-1][0] && current.y == house_coords[h_number-1][1]){
+           var temp = current;
+            path.push(current);
+            while(temp.previous){
+                path.push(temp.previous);
+                temp = temp.previous;
+            }
+            console.log("Found Path!!");
+            break;
+        }
+        removeFromArray(current, openSet);
+        closedSet.push(current);
+        
+        var neighbors = current.neighbors;
+        for(var i = 0; i<neighbors.length; i++){
+            if(!closedSet.includes(neighbors[i]) && !neighbors[i].obstacle){
+                var tempG = current.g + 1;
+                if(openSet.includes(neighbors[i])){
+                    if(tempG < neighbors[i].g){
+                        neighbors[i].g = tempG;
+                    }
+                }else{
+                    neighbors[i].g = tempG;
+                    openSet.push(neighbors[i]);
+                }
+                neighbors[i].h = heuristic(neighbors[i], house_coords[h_number-1][0], house_coords[h_number-1][1]);
+                neighbors[i].f = neighbors[i].g + neighbors[i].h;
+                neighbors[i].previous = current;
+            }
+        }
+    }
+    for(var i = 0; i<path.length; i++){
+        total_f = path[i].f + total_f;                //get total f of going from current position to closest warehouse
+    }
+    return [total_f, path];
+}
+
 
 function setup() {
   createCanvas(400, 400);
@@ -215,9 +277,31 @@ function setup() {
     start_tile = grid[4][10];
     var shiggy = closestWarehouse(start_tile.x, start_tile.y);
     var array = findRequirements(shiggy[0]["id"], shiggy[1]["id"]);
-    rasta = findPath(array[0]["house"], array[0]["warehouse"], start_tile);
+    rasta = findPath_warehouse(array[0]["warehouse"], start_tile);
+    console.log(array);
     console.log("Raasta");
     console.log(rasta);
+    
+     for(var i = 0; i<cols; i++){  // creating tile objects
+      for(var j = 0; j<rows; j++){
+          grid[i][j] = new Tile(i, j);
+      }
+  }
+  console.log(grid);
+  for(var i = 0; i<cols; i++){  // creating tile neighbors
+      for(var j = 0; j<rows; j++){
+          grid[i][j].addNeighbors(grid);
+      }
+  }
+     for(var k = 0; k<12; k++){          //update warehouses everytime in the beginning
+      grid[w_coords[k][0]][w_coords[k][1]].warehouse = true;
+      grid[w_coords[k][0]][w_coords[k][1]].id = k+1;
+  }
+    
+  for(var k = 0; k<obstacle_coords.length; k++){
+      grid[obstacle_coords[k][0]][obstacle_coords[k][1]].obstacle = true;
+  }
+    var current_warehouse = grid[6][10];
 }
 
 
