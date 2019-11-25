@@ -93,6 +93,7 @@ function Tile(i, j) {
     }
 }
 
+//find warehouses closest to given location
 function closestWarehouse(a, b){
     var distances = [];
     for(var i = 0; i<w_coords.length; i++){
@@ -110,6 +111,7 @@ function closestWarehouse(a, b){
     return [distances[0], distances[1]];
 }
 
+//take warehouse coords and return the coords of house that require materials from that warehouse
 function findRequirements(id1, id2){
     var destinations = [];
     for(var i = 0; i<configuration.length; i++){
@@ -128,11 +130,12 @@ function findRequirements(id1, id2){
             }
         }
     }     
-    return destinations;//take warehouse coords and return the coords of house that require materials from that warehouse
+    return destinations;
 }
 
+//funtion to apply A* and find path to from the given start to end and return the time for the path
 function findPath(h_number, w_number, current_house){
-    var openSet = []; 
+    var openSet = [];                                   
     var closedSet = [];
     var path = [];
     openSet.push(current_house);
@@ -153,14 +156,14 @@ function findPath(h_number, w_number, current_house){
                 temp = temp.previous;
             }
             console.log("Found Path!!");
+            break;
         }
         removeFromArray(current, openSet);
         closedSet.push(current);
         
         var neighbors = current.neighbors;
         for(var i = 0; i<neighbors.length; i++){
-            
-            if(!closedSet.includes(neighbors[i])){
+            if(!closedSet.includes(neighbors[i]) && !neighbors[i].obstacle){
                 var tempG = current.g + 1;
                 if(openSet.includes(neighbors[i])){
                     if(tempG < neighbors[i].g){
@@ -172,10 +175,11 @@ function findPath(h_number, w_number, current_house){
                 }
                 neighbors[i].h = heuristic(neighbors[i], w_coords[w_number-1][0], w_coords[w_number-1][1]);
                 neighbors[i].f = neighbors[i].g + neighbors[i].h;
+                neighbors[i].previous = current;
             }
         }
     }
-    return path;//funtion to apply A* and find path to from the given start to end and return the time for the path
+    return path;
 }
 
 function setup() {
@@ -199,13 +203,20 @@ function setup() {
           grid[i][j].addNeighbors(grid);
       }
   }
+     for(var k = 0; k<12; k++){          //update warehouses everytime in the beginning
+      grid[w_coords[k][0]][w_coords[k][1]].warehouse = true;
+      grid[w_coords[k][0]][w_coords[k][1]].id = k+1;
+  }
     
-  start_tile = grid[4][10];
+  for(var k = 0; k<obstacle_coords.length; k++){
+      grid[obstacle_coords[k][0]][obstacle_coords[k][1]].obstacle = true;
+  }
+    
+    start_tile = grid[4][10];
     var shiggy = closestWarehouse(start_tile.x, start_tile.y);
     var array = findRequirements(shiggy[0]["id"], shiggy[1]["id"]);
     rasta = findPath(array[0]["house"], array[0]["warehouse"], start_tile);
-    console.log(array);
-    console.log(rasta.length);
+    console.log("Raasta");
     console.log(rasta);
 }
 
@@ -227,9 +238,9 @@ function draw() {
           grid[i][j].show(255);
       }
   }
-    for (var i = 0; i<rasta.length; i++){
+    /*for (var i = 0; i<rasta.length; i++){
         rasta[i].show(0, 255, 0);
-    }
+    }*/
     /*while(houses_left.length != 0){
         var warehouses = closestWarehouse(current_tile.x, current_tile.y); 
     }*/
