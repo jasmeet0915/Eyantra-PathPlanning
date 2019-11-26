@@ -4,6 +4,7 @@ var grid = new Array(cols);
 var w, h;
 var start_tile;
 var current_tile;
+var number_paths = 0;
 var hx = 4, hy = 10;
 
 //function to recreate the grid and reset all the tiles
@@ -35,9 +36,9 @@ var houses_left = [1, 2, 3, 4, 5];
 //configuration to store the warehouse number for material 1 and material 2 that is required by the house at index number
 var configuration = [
     {m1: [7, 8], m2: [11, 12]},
-    {m1: [3, 4], m2: [5, 6]},
-    {m1: [9, 10], m2: [7, 8]},
-    {m1: [1, 2], m2: [0, 0]},
+    {m1: [3, 4], m2: [5, 6]}, 
+    {m1: [9, 10], m2: [7, 8]}, 
+    {m1: [1, 2], m2: []},
     {m1: [1, 2], m2: [9, 10]}
 ];
 
@@ -48,7 +49,7 @@ var obstacle_coords = [
     [4, 5], [5, 5], [6, 5], [8, 5], [3, 6], [4, 6], [5, 6], [0, 7], 
     [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [8, 7], [0, 9], [2, 9], 
     [3, 9], [4, 9], [5, 9], [6, 9], [8, 9], [3, 10], [5, 10], [2, 11], 
-    [3, 11], [5, 11], [6, 11]
+    [3, 11], [5, 11], [6, 11], [2, 6], [2, 2]
 ];
 
 // location of warehouses
@@ -56,9 +57,9 @@ var w_coords = [
     {id: 1, coords:[0, 10]},
     {id: 2, coords:[2, 10]},
     {id: 3, coords: [0, 6]},
-    {id: 4, coords: [2, 6]},         
+    //{id: 4, coords: [2, 6]},         
     {id: 5, coords: [0, 2]},
-    {id: 6, coords: [2, 2]},
+    //{id: 6, coords: [2, 2]},
     {id: 7, coords: [6, 10]},
     {id: 8, coords: [8, 10]},
     {id: 9, coords: [6, 6]},
@@ -71,6 +72,16 @@ var w_coords = [
 var house_coords = [   
     [0, 8], [8, 8], [0, 4], [8, 4], [4, 2]          
 ];
+
+//function to update the configuration after completing each delivery
+function updateConfig(h_index, w_id){
+    if(configuration[h_index]["m1"].includes(w_id)){
+        configuration[h_index]["m1"] = [];
+    }
+    if(configuration[h_index]["m2"].includes(w_id)){
+        configuration[h_index]["m2"] = [];
+    }
+}
 
 //function to calculate heuristic
 function heuristic(tile1, housex, housey){
@@ -134,7 +145,7 @@ function closestWarehouse(a, b){
         //distances[1][i] = dist(a, b, w_coords[i][0], w_coords[i][1]);
         distances.push({
             distance: dist(a, b, w_coords[i]["coords"][0], w_coords[i]["coords"][1]),
-            id: i+1
+            id: w_coords[i]["id"]
         });
     } 
     distances.sort(function(x, y){
@@ -308,7 +319,8 @@ function setup() {
 }
 
 
-function draw() {  
+function draw() { 
+  console.log(""); console.log("");
   resetGrid();  
   current_tile = grid[hx][hy];
   for(var i = 0; i<cols; i++){       //show the arena
@@ -321,7 +333,10 @@ function draw() {
   if(houses_left.length>0){
       var route_f = [];
       var nearest_warehouses = closestWarehouse(current_tile.x, current_tile.y);
+      console.log("Current Tile:", current_tile);
+      console.log("Distances to the Nearest Warehouses:", nearest_warehouses);
       var possible_routes = findRequirements(nearest_warehouses[0]["id"], nearest_warehouses[1]["id"]);
+      console.log("Nearest Warehouse with respective Houses:", possible_routes);
       for(var i = 0; i<possible_routes.length; i++){
           w_id = possible_routes[i]["warehouse"];
           h_id = possible_routes[i]["house"];
@@ -339,35 +354,40 @@ function draw() {
               lowestf = i;
           }
       }
+      
+      //print out the calculated route details
+      console.log("Possible Routes that can be taken from current tile:", route_f);
+      console.log("The Smallest possible Path:", route_f[lowestf]);
 
       //remove the warehouse which has been visited and add its coordinates to obstacle_coords
       var removeIndex = w_coords.map(function(item){return item.id;}).indexOf(route_f[lowestf]["warehouse"]);
       obstacle_coords.push([w_coords[removeIndex]["coords"][0], w_coords[removeIndex]["coords"][1]]);
       w_coords.splice(removeIndex, 1);
-      
-      //change the configuration according to completed delivery
-      if(configuration[route_f[lowestf]["house"]-1]["m1"].includes(route_f[lowestf]["warehouse"])){
-          configuration[route_f[lowestf]["house"]-1]["m1"] = [];
-      }
-      
+
       //change the location of current tile to the current house location
       hx = house_coords[route_f[lowestf]["house"]-1][0];
       hy = house_coords[route_f[lowestf]["house"]-1][1];
       
+      //update the configuration after this delivery
+      updateConfig(route_f[lowestf]["house"]-1, route_f[lowestf]["warehouse"]);
+            
+      //remove the completed house from houses_left array
       for(var i = 0; i<configuration.length; i++){
-          if(configuration[i]["m1"] == [] && configuration[i]["m2"] == []){
+          if(configuration[i]["m1"].length == 0 && configuration[i]["m2"].length == 0){
               removeFromArray(i+1, houses_left);
           }
       }
-      console.log("going to warehouse number");
-      console.log(route_f[lowestf]["warehouse"]);
-      console.log("going to house number");
-      console.log(route_f[lowestf]["house"]);
       
-      console.log(hx, hy);
-      console.log(configuration);
+      //print out the details of the delivery
+      console.log("Going from:", current_tile.x, ",", current_tile.y);
+      console.log("Going to Warehouse No.:", route_f[lowestf]["warehouse"]);
+      console.log("Going to House No.:", route_f[lowestf]["house"]);  
+      console.log("Updated Configuration:", configuration);
+      console.log("House No. of houses left Unfullfilled:", houses_left);
+      number_paths = number_paths + 1;
   }else{
-      console.log("Completed all scheduled Deliveries!!");
+      console.log("COMPLETED ALL SCHEDULED DELIVERIES!!");
+      console.log("Total paths taken for Completing the Task:", number_paths);
       noLoop();
   }
 
