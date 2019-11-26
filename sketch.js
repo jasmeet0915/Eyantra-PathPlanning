@@ -4,8 +4,9 @@ var grid = new Array(cols);
 var w, h;
 var start_tile;
 var current_tile;
-    var bc = 0;
+var hx = 4, hy = 10;
 
+//function to recreate the grid and reset all the tiles
 function resetGrid(){
   for(var i = 0; i<cols; i++){                                                // creating tile objects
       for(var j = 0; j<rows; j++){
@@ -29,14 +30,15 @@ function resetGrid(){
   }
 }
 
-//var warehouses = new Array(12);
-var houses_left = ["h1", "h2", "h3", "h4", "h5"];
+var houses_left = [1, 2, 3, 4, 5];
+
+//configuration to store the warehouse number for material 1 and material 2 that is required by the house at index number
 var configuration = [
-    [7, 8, 11, 12],
-    [3, 4, 5, 6],
-    [9, 10, 7, 8],
-    [1, 2, 0, 0],
-    [1, 2, 9, 10]
+    {m1: [7, 8], m2: [11, 12]},
+    {m1: [3, 4], m2: [5, 6]},
+    {m1: [9, 10], m2: [7, 8]},
+    {m1: [1, 2], m2: [0, 0]},
+    {m1: [1, 2], m2: [9, 10]}
 ];
 
 var obstacle_coords = [
@@ -49,11 +51,12 @@ var obstacle_coords = [
     [3, 11], [5, 11], [6, 11]
 ];
 
-var w_coords = [  // location of warehouses
+// location of warehouses
+var w_coords = [  
     {id: 1, coords:[0, 10]},
     {id: 2, coords:[2, 10]},
     {id: 3, coords: [0, 6]},
-    {id: 4, coords: [2, 6]},         //change to key value pair
+    {id: 4, coords: [2, 6]},         
     {id: 5, coords: [0, 2]},
     {id: 6, coords: [2, 2]},
     {id: 7, coords: [6, 10]},
@@ -64,16 +67,19 @@ var w_coords = [  // location of warehouses
     {id: 12, coords: [8, 2]}
 ];
 
-var house_coords = [   //location of houses
-    [0, 8], [8, 8], [0, 4], [8, 4], [4, 2]          //change to key value pair
+//location of houses
+var house_coords = [   
+    [0, 8], [8, 8], [0, 4], [8, 4], [4, 2]          
 ];
 
+//function to calculate heuristic
 function heuristic(tile1, housex, housey){
     var distance = dist(tile1.x, housex, tile1.y, housey);
     return distance;
 }
 
-function removeFromArray(elt, array){                   //funtion to remove element from a given array
+//funtion to remove element from a given array
+function removeFromArray(elt, array){                   
     for(var i = array.length-1; i>=0; i--){
         if(array[i] == elt){
             array.splice(i, 1);
@@ -137,18 +143,30 @@ function closestWarehouse(a, b){
     return [distances[0], distances[1]];
 }
 
-//take warehouse coords and return the coords of house that require materials from that warehouse
+//take warehouse number and return the coords of house that require materials from that warehouse
 function findRequirements(id1, id2){
     var destinations = [];
     for(var i = 0; i<configuration.length; i++){
-        for(var j = 0; j<4; j++){
-            if(configuration[i][j] == id1){
+        for(var j = 0; j<2; j++){
+            if(configuration[i]["m1"][j] == id1){
                 destinations.push({
                     house: i+1,
                     warehouse: id1
                 });
             }
-            if(configuration[i][j] == id2){
+           if(configuration[i]["m2"][j] == id1){
+                destinations.push({
+                    house: i+1,
+                    warehouse: id1
+                });
+            }
+            if(configuration[i]["m1"][j] == id2){
+                destinations.push({
+                    house: i+1,
+                    warehouse: id2
+                });
+            }
+            if(configuration[i]["m2"][j] == id2){
                 destinations.push({
                     house: i+1,
                     warehouse: id2
@@ -191,7 +209,6 @@ function findPath_warehouse(w_number, current_house){
                 path.push(temp.previous);
                 temp = temp.previous;
             }
-            console.log("Found Path!!");
             break;
         }
         removeFromArray(current, openSet);
@@ -246,7 +263,6 @@ function findPath_house(h_number, current_warehouse){
                 path.push(temp.previous);
                 temp = temp.previous;
             }
-            console.log("Found Path!!");
             break;
         }
         removeFromArray(current, openSet);
@@ -267,12 +283,6 @@ function findPath_house(h_number, current_warehouse){
                 neighbors[i].h = heuristic(neighbors[i], house_coords[h_number-1][0], house_coords[h_number-1][1]);
                 neighbors[i].f = neighbors[i].g + neighbors[i].h;
                 neighbors[i].previous = current;
-               if(neighbors[i].x == 2 && neighbors[i].y == 8){
-                console.log(neighbors[i]);
-                console.log(neighbors[i].f);
-                console.log(neighbors[i].g);
-                console.log(neighbors[i].h);
-            }
             }
         }
     }
@@ -294,20 +304,21 @@ function setup() {
   } 
   resetGrid();
   start_tile = grid[4][10];
-  current_tile = start_tile;
-    
+  current_tile = start_tile;   
 }
 
 
 function draw() {  
   resetGrid();  
+  current_tile = grid[hx][hy];
   for(var i = 0; i<cols; i++){       //show the arena
       for(var j = 0; j<rows; j++){
           grid[i][j].show(255, 255, 255);
       }
   }
   start_tile.show(0, 255, 0);
-  if(houses_left.length>0 && bc == 0){
+  current_tile.show(255, 0, 0);
+  if(houses_left.length>0){
       var route_f = [];
       var nearest_warehouses = closestWarehouse(current_tile.x, current_tile.y);
       var possible_routes = findRequirements(nearest_warehouses[0]["id"], nearest_warehouses[1]["id"]);
@@ -328,19 +339,33 @@ function draw() {
               lowestf = i;
           }
       }
-      console.log(route_f);
-      console.log(route_f[lowestf]["f_value"]);
-      console.log("path");
-      console.log(route_f[lowestf]["path"]);
-      console.log("going to warehouse number");
-      console.log(route_f[lowestf]["warehouse"]);
-      
-      //remove the warehouse which has been visited
+
+      //remove the warehouse which has been visited and add its coordinates to obstacle_coords
       var removeIndex = w_coords.map(function(item){return item.id;}).indexOf(route_f[lowestf]["warehouse"]);
       obstacle_coords.push([w_coords[removeIndex]["coords"][0], w_coords[removeIndex]["coords"][1]]);
       w_coords.splice(removeIndex, 1);
-      console.log(w_coords);
-      bc = 1;
+      
+      //change the configuration according to completed delivery
+      if(configuration[route_f[lowestf]["house"]-1]["m1"].includes(route_f[lowestf]["warehouse"])){
+          configuration[route_f[lowestf]["house"]-1]["m1"] = [];
+      }
+      
+      //change the location of current tile to the current house location
+      hx = house_coords[route_f[lowestf]["house"]-1][0];
+      hy = house_coords[route_f[lowestf]["house"]-1][1];
+      
+      for(var i = 0; i<configuration.length; i++){
+          if(configuration[i]["m1"] == [] && configuration[i]["m2"] == []){
+              removeFromArray(i+1, houses_left);
+          }
+      }
+      console.log("going to warehouse number");
+      console.log(route_f[lowestf]["warehouse"]);
+      console.log("going to house number");
+      console.log(route_f[lowestf]["house"]);
+      
+      console.log(hx, hy);
+      console.log(configuration);
   }else{
       console.log("Completed all scheduled Deliveries!!");
       noLoop();
