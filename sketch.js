@@ -12,15 +12,17 @@ var configuration = [
     [9, 10, 7, 8],
     [1, 2, 0, 0],
     [1, 2, 9, 10]
-]
+];
 
 var obstacle_coords = [
     [0, 0], [0, 1], [0, 12], [0, 11], [8, 0], [8, 1], [8, 12], [8, 11],
-    [2, 1], [3, 1], [5, 1], [6, 1], [3, 2], [5, 2], [0, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3],
-    [8, 3], [0, 5], [2, 5], [3, 5], [4, 5], [5, 5], [6, 5], [8, 5], [3, 6], [4, 6], [5, 6], 
-    [0, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [8, 7], [0, 9], [2, 9], [3, 9], [4, 9], [5, 9], [6, 9], 
-    [8, 9], [3, 10], [5, 10], [2, 11], [3, 11], [5, 11], [6, 11]
-]
+    [2, 1], [3, 1], [5, 1], [6, 1], [3, 2], [5, 2], [0, 3], [2, 3], 
+    [3, 3], [4, 3], [5, 3], [6, 3], [8, 3], [0, 5], [2, 5], [3, 5], 
+    [4, 5], [5, 5], [6, 5], [8, 5], [3, 6], [4, 6], [5, 6], [0, 7], 
+    [2, 7], [3, 7], [4, 7], [5, 7], [6, 7], [8, 7], [0, 9], [2, 9], 
+    [3, 9], [4, 9], [5, 9], [6, 9], [8, 9], [3, 10], [5, 10], [2, 11], 
+    [3, 11], [5, 11], [6, 11]
+];
 
 var w_coords = [  // location of warehouses
     [0, 10],
@@ -143,8 +145,8 @@ function findPath_warehouse(w_number, current_house){
     //path from current position to closest warehouse
     openSet.push(current_house);
     
-    var lowestf = 0;
     while(openSet.length != 0){
+        var lowestf = 0;
         for(var i = 0; i<openSet.length; i++){
             if(openSet[i].f < openSet[lowestf].f){
                 lowestf = i;
@@ -198,8 +200,8 @@ function findPath_house(h_number, current_warehouse){
     //path from current position to closest warehouse
     openSet.push(current_warehouse);
     
-    var lowestf = 0;
     while(openSet.length != 0){
+        var lowestf = 0;
         for(var i = 0; i<openSet.length; i++){
             if(openSet[i].f < openSet[lowestf].f){
                 lowestf = i;
@@ -234,6 +236,12 @@ function findPath_house(h_number, current_warehouse){
                 neighbors[i].h = heuristic(neighbors[i], house_coords[h_number-1][0], house_coords[h_number-1][1]);
                 neighbors[i].f = neighbors[i].g + neighbors[i].h;
                 neighbors[i].previous = current;
+               if(neighbors[i].x == 2 && neighbors[i].y == 8){
+                console.log(neighbors[i]);
+                console.log(neighbors[i].f);
+                console.log(neighbors[i].g);
+                console.log(neighbors[i].h);
+            }
             }
         }
     }
@@ -302,6 +310,8 @@ function setup() {
       grid[obstacle_coords[k][0]][obstacle_coords[k][1]].obstacle = true;
   }
     var current_warehouse = grid[6][10];
+    var rasta2 = findPath_house(array[0]["house"], current_warehouse);
+    console.log(rasta2);
 }
 
 
